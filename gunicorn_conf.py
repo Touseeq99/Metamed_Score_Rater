@@ -26,10 +26,10 @@ user = None  # Drop privileges to this user if running as root
 group = None  # Drop privileges to this group if running as root
 tmp_upload_dir = None  # Directory to store temporary uploads
 
-# Logging
-accesslog = 'logs/gunicorn_access.log'  
-errorlog = 'logs/gunicorn_error.log'  
-loglevel = 'info'  
+# # Logging
+# accesslog = 'logs/gunicorn_access.log'  
+# errorlog = 'logs/gunicorn_error.log'  
+# loglevel = 'info'  
 access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %(L)s'  
 
 # Process Naming
