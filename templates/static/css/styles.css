@@ -1,0 +1,99 @@
+/* Custom styles for the upload interface */
+
+/* File list styles */
+.file-item {
+    @apply flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200;
+    transition: all 0.2s ease;
+}
+
+.file-item:hover {
+    @apply bg-blue-50 border-blue-200;
+}
+
+.file-item.processing {
+    border-color: #3b82f6;
+    background-color: #f0f9ff;
+    border-left: 3px solid #3b82f6;
+}
+
+.file-item.processing .file-icon {
+    color: #3b82f6;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.6; }
+    100% { opacity: 1; }
+}
+
+.file-status {
+    color: #3b82f6;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.file-item .file-info {
+    @apply flex items-center space-x-3;
+}
+
+.file-item .file-icon {
+    @apply text-blue-500 text-xl;
+}
+
+.file-item .file-name {
+    @apply text-gray-800 truncate max-w-xs;
+}
+
+.file-item .file-size {
+    @apply text-sm text-gray-500;
+}
+
+.file-item .file-remove {
+    @apply text-red-500 hover:text-red-700 cursor-pointer;
+    transition: color 0.2s ease;
+}
+
+/* Drag and drop styles */
+#drop-area.highlight {
+    @apply border-blue-500 bg-blue-50;
+}
+
+/* Results styles */
+.result-card {
+    @apply bg-white rounded-lg shadow p-4 mb-4 border-l-4;
+}
+
+.result-success {
+    @apply border-green-500;
+}
+
+.result-error {
+    @apply border-red-500;
+}
+
+/* Progress bar animation */
+@keyframes progress-pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+#progress-bar.uploading {
+    animation: progress-pulse 1.5s ease-in-out infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .file-item {
+        @apply flex-col items-start space-y-2;
+    }
+    
+    .file-item .file-info {
+        @apply w-full;
+    }
+    
+    .file-item .file-actions {
+        @apply w-full flex justify-end;
+    }
+}
