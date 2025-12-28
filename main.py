@@ -209,14 +209,3 @@ async def rate_uploaded_paper(
         )
 
 # Removed the rate_paper_by_path endpoint as it's not needed for API uploads
-        
-
-if __name__ == "__main__":
-    # Run with uvicorn programmatically
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        workers=1
-    )

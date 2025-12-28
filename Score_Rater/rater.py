@@ -2,12 +2,9 @@ import os
 import sys
 import logging
 import json
-import argparse
 from pathlib import Path
-from typing import Dict, Any, Optional
 from openai import OpenAI
 from dotenv import load_dotenv
-from datetime import datetime
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -330,7 +327,7 @@ def save_to_database(processed_output , file_path):
         # Create ResearchPaper record
         metadata = processed_output['metadata']
         research_paper = ResearchPaper(
-            file_name=os.basename(file_path),
+            file_name=os.path.basename(file_path),
             total_score=metadata.get('total_score', 0),
             confidence=int(metadata.get('confidence', 0) * 100),
             paper_type=metadata.get('paper_type', '')
@@ -379,12 +376,12 @@ def save_to_database(processed_output , file_path):
             db.add(penalty_obj)
         
         db.commit()
-        logger.info(f"✅ Successfully saved to database with ID: {research_paper.id}")
+        logger.info(f" Successfully saved to database with ID: {research_paper.id}")
         return research_paper.id
         
     except Exception as e:
         db.rollback()
-        logger.error(f"❌ Error saving to database: {str(e)}")
+        logger.error(f" Error saving to database: {str(e)}")
         import traceback
         traceback.print_exc()
         return None
@@ -421,7 +418,7 @@ def process_paper(file_path: str, skip_rag: bool = False, skip_db: bool = False)
     if DB_AVAILABLE and not skip_db:
         paper_id = save_to_database(processed_output , file_path)
         if paper_id:
-            logger.info(f"✅ Successfully saved to database with ID: {paper_id}")
+            logger.info(f" Successfully saved to database with ID: {paper_id}")
             processed_output['paper_id'] = paper_id
     
     # Process with RAG if enabled
@@ -431,7 +428,7 @@ def process_paper(file_path: str, skip_rag: bool = False, skip_db: bool = False)
             rag_metadata = {
                 'paper_id': paper_id,
                 'paper_type': processed_output.get('metadata', {}).get('paper_type', 'Unknown'),
-                'file_name': os.basename(file_path),
+                'file_name': os.path.basename(file_path),
                 'total_score': processed_output.get('metadata', {}).get('total_score', 0),
                 'confidence': processed_output.get('metadata', {}).get('confidence', 0)
             }
