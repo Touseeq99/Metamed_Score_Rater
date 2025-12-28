@@ -265,6 +265,9 @@ def process_rater_output(result_text):
     try:
         # Parse the JSON response
         result = json.loads(result_text)
+        logger.info(f"DEBUG: Parsed JSON keys: {list(result.keys())}")
+        logger.info(f"DEBUG: Total score in JSON: {result.get('total_score')}")
+        logger.info(f"DEBUG: Paper type in JSON: {result.get('paper_type')}")
         
         # Initialize the output structure
         processed = {
@@ -283,7 +286,6 @@ def process_rater_output(result_text):
         
         # Add metadata with default values
         metadata_fields = {
-            'file_name': '',
             'total_score': 0,
             'confidence': 0,
             'comments': [],
@@ -293,7 +295,11 @@ def process_rater_output(result_text):
         
         # Update with actual values from result
         for field, default in metadata_fields.items():
-            processed['metadata'][field] = result.get(field, default)
+            actual_value = result.get(field, default)
+            logger.info(f"DEBUG: Field '{field}' -> {actual_value}")
+            processed['metadata'][field] = actual_value
+        
+        logger.info(f"DEBUG: Final metadata: {processed['metadata']}")
         
         # Add penalties if any
         if 'penalties' in result and result['penalties']:

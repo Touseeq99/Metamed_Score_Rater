@@ -4,56 +4,175 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MetaMed Research Paper Rater</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="/static/css/styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'pulse-slow': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(10px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <header class="text-center mb-12">
-            <h1 class="text-4xl font-bold text-blue-600 mb-2">MetaMed Research Paper Rater</h1>
-            <p class="text-gray-600">Upload your research papers for evaluation using the CLARA-2 scoring framework</p>
+<body class="bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen">
+    <!-- Background decoration -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse-slow"></div>
+        <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse-slow" style="animation-delay: 1s;"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-pink-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse-slow" style="animation-delay: 2s;"></div>
+    </div>
+
+    <div class="relative z-10">
+        <!-- Header -->
+        <header class="bg-white/90 backdrop-blur-sm shadow-sm border-b border-gray-200/50 sticky top-0 z-50">
+            <div class="container mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-microscope text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-800">MetaMed</h1>
+                            <p class="text-xs text-gray-500">Research Paper Rater</p>
+                        </div>
+                    </div>
+                    <nav class="hidden md:flex items-center space-x-6">
+                        <a href="#upload" class="text-gray-600 hover:text-blue-600 transition-colors font-medium">Upload</a>
+                        <a href="#features" class="text-gray-600 hover:text-blue-600 transition-colors font-medium">Features</a>
+                        <a href="#about" class="text-gray-600 hover:text-blue-600 transition-colors font-medium">About</a>
+                        <button class="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-md hover:shadow-lg">
+                            Get Started
+                        </button>
+                    </nav>
+                    <button class="md:hidden text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
         </header>
 
-        <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
-            <!-- Upload Panel -->
-            <div class="p-8">
-                <div id="drop-area" class="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center cursor-pointer hover:border-blue-400 transition-colors duration-200">
-                    <div class="space-y-4">
-                        <div class="text-blue-500">
-                            <i class="fas fa-cloud-upload-alt text-5xl"></i>
+        <div class="container mx-auto px-4 py-8">
+            <!-- Hero Section -->
+            <section id="upload" class="text-center mb-12 animate-fade-in">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl mb-4 shadow-lg">
+                    <i class="fas fa-microscope text-white text-2xl"></i>
+                </div>
+                <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
+                    MetaMed Research Paper Rater
+                </h1>
+                <p class="text-gray-600 text-lg max-w-2xl mx-auto mb-8">
+                    Upload your research papers for evaluation using the CLARA-2 scoring framework
+                </p>
+                
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-12">
+                    <div class="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-chart-line text-blue-600 text-xl"></i>
                         </div>
-                        <h3 class="text-xl font-medium text-gray-700">Drag & Drop your files here</h3>
-                        <p class="text-gray-500">or</p>
-                        <label for="file-input" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer transition-colors duration-200">
-                            <i class="fas fa-folder-open mr-2"></i>
-                            <span>Browse Files</span>
-                            <input id="file-input" type="file" multiple webkitdirectory directory class="hidden">
-                        </label>
-                        <p class="text-sm text-gray-500 mt-2">Supports PDF files and folders containing PDFs</p>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-1">11 Categories</h3>
+                        <p class="text-sm text-gray-600">Comprehensive evaluation metrics</p>
+                    </div>
+                    <div class="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg">
+                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-brain text-purple-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-1">AI-Powered</h3>
+                        <p class="text-sm text-gray-600">Advanced CLARA-2 analysis</p>
+                    </div>
+                    <div class="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg">
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-bolt text-green-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-1">Fast Results</h3>
+                        <p class="text-sm text-gray-600">Instant paper evaluation</p>
                     </div>
                 </div>
+            </section>
+
+        <!-- Main Upload Card -->
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden animate-slide-up">
+                <!-- Upload Panel -->
+                <div class="p-8">
+                    <div id="drop-area" class="group border-2 border-dashed border-gray-300 rounded-xl p-12 text-center cursor-pointer transition-all duration-300 hover:border-blue-400 hover:bg-blue-50/50 hover:shadow-lg">
+                        <div class="space-y-6">
+                            <div class="mx-auto w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                <i class="fas fa-cloud-upload-alt text-3xl text-blue-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-semibold text-gray-800 mb-2">Drag & Drop your files here</h3>
+                                <p class="text-gray-500 mb-4">or</p>
+                                <label for="file-input" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 cursor-pointer transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                                    <i class="fas fa-folder-open mr-2"></i>
+                                    <span class="font-medium">Browse Files</span>
+                                    <input id="file-input" type="file" multiple webkitdirectory directory class="hidden">
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-center space-x-6 text-sm text-gray-500">
+                                <div class="flex items-center">
+                                    <i class="fas fa-file-pdf text-red-500 mr-1"></i>
+                                    <span>PDF</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-folder text-blue-500 mr-1"></i>
+                                    <span>Folders</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-shield-alt text-green-500 mr-1"></i>
+                                    <span>Secure</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                 <!-- Selected Files -->
-                <div id="file-list" class="mt-6 space-y-2 max-h-60 overflow-y-auto">
+                <div id="file-list" class="mt-6 space-y-3 max-h-80 overflow-y-auto">
                     <!-- Files will be listed here -->
                 </div>
 
                 <!-- Upload Progress -->
-                <div id="upload-progress" class="mt-6 hidden">
-                    <div class="flex justify-between mb-1">
-                        <span class="text-sm font-medium text-gray-700">Uploading...</span>
-                        <span id="progress-percent" class="text-sm font-medium text-blue-600">0%</span>
+                <div id="upload-progress" class="mt-8 hidden">
+                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mr-3">
+                                    <i class="fas fa-arrow-up text-white text-sm"></i>
+                                </div>
+                                <span class="font-medium text-gray-800">Processing Files</span>
+                            </div>
+                            <span id="progress-percent" class="text-sm font-bold text-blue-600">0%</span>
+                        </div>
+                        <div class="w-full bg-white rounded-full h-3 shadow-inner">
+                            <div id="progress-bar" class="bg-gradient-to-r from-blue-600 to-purple-600 h-3 rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
+                        </div>
+                        <div id="upload-status" class="text-sm text-gray-600 mt-3 flex items-center">
+                            <i class="fas fa-spinner fa-spin mr-2 text-blue-600"></i>
+                            <span>Preparing to upload...</span>
+                        </div>
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                        <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
-                    </div>
-                    <div id="upload-status" class="text-sm text-gray-500 mt-1">Preparing to upload...</div>
                 </div>
 
                 <!-- Upload Button -->
                 <div class="mt-8 text-center">
-                    <button id="upload-button" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200" disabled>
+                    <button id="upload-button" class="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium text-lg disabled:transform-none disabled:shadow-none" disabled>
                         <i class="fas fa-upload mr-2"></i>Upload & Process Files
                     </button>
                 </div>
@@ -61,12 +180,93 @@
         </div>
 
         <!-- Results Section -->
-        <div id="results-section" class="mt-12 max-w-4xl mx-auto hidden">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Processing Results</h2>
-            <div id="results-container" class="space-y-4">
+        <div id="results-section" class="mt-16 max-w-6xl mx-auto hidden">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Processing Results</h2>
+                <p class="text-gray-600">Review the evaluation results for your uploaded papers</p>
+            </div>
+            <div id="results-container" class="space-y-6">
                 <!-- Results will be displayed here -->
             </div>
         </div>
+
+        <!-- Footer -->
+        <footer class="bg-gray-900 text-white mt-20">
+            <div class="container mx-auto px-4 py-12">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <!-- Company Info -->
+                    <div>
+                        <div class="flex items-center space-x-2 mb-4">
+                            <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-microscope text-white text-sm"></i>
+                            </div>
+                            <h3 class="text-lg font-bold">MetaMed</h3>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4">
+                            Advanced research paper evaluation using the CLARA-2 scoring framework for comprehensive medical research analysis.
+                        </p>
+                        <div class="flex space-x-3">
+                            <a href="#" class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors">
+                                <i class="fab fa-twitter text-sm"></i>
+                            </a>
+                            <a href="#" class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors">
+                                <i class="fab fa-linkedin text-sm"></i>
+                            </a>
+                            <a href="#" class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors">
+                                <i class="fab fa-github text-sm"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Product -->
+                    <div>
+                        <h4 class="text-lg font-semibold mb-4">Product</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Features</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">CLARA-2 Framework</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">API Access</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Pricing</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- Resources -->
+                    <div>
+                        <h4 class="text-lg font-semibold mb-4">Resources</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Documentation</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Research Papers</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Case Studies</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Blog</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- Support -->
+                    <div>
+                        <h4 class="text-lg font-semibold mb-4">Support</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Help Center</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Contact Us</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Privacy Policy</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Terms of Service</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Bottom Bar -->
+                <div class="border-t border-gray-800 mt-8 pt-8">
+                    <div class="flex flex-col md:flex-row justify-between items-center">
+                        <p class="text-gray-400 text-sm mb-4 md:mb-0">
+                            © 2024 MetaMed Research Paper Rater. All rights reserved.
+                        </p>
+                        <div class="flex items-center space-x-6 text-sm text-gray-400">
+                            <span>Built with ❤️ for medical research</span>
+                            <span>•</span>
+                            <span>Powered by CLARA-2</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
 
     <script src="/static/js/upload.js"></script>

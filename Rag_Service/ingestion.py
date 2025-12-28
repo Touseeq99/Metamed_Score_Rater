@@ -27,15 +27,27 @@ def flatten_metadata(metadata):
             # Flatten page_metadata with a prefix
             for subkey, subvalue in value.items():
                 flat_key = f"page_{subkey}"
-                flat_metadata[flat_key] = subvalue
-        elif isinstance(value, (str, int, float, bool)) or value is None:
+                # Convert None to empty string or default value
+                if subvalue is None:
+                    flat_metadata[flat_key] = ""
+                else:
+                    flat_metadata[flat_key] = subvalue
+        elif isinstance(value, (str, int, float, bool)):
             flat_metadata[key] = value
+        elif value is None:
+            # Convert None to empty string to avoid Pinecone null value error
+            flat_metadata[key] = ""
         elif isinstance(value, list) and all(isinstance(x, str) for x in value):
             flat_metadata[key] = value
         elif isinstance(value, dict):
             # Recursively flatten nested dictionaries
             for subkey, subvalue in value.items():
-                flat_metadata[f"{key}_{subkey}"] = subvalue
+                flat_key = f"{key}_{subkey}"
+                # Convert None to empty string
+                if subvalue is None:
+                    flat_metadata[flat_key] = ""
+                else:
+                    flat_metadata[flat_key] = subvalue
     return flat_metadata
 
 def ingestion_docs_doctor(file: str, rating_metadata: dict = None):
@@ -54,46 +66,47 @@ def ingestion_docs_doctor(file: str, rating_metadata: dict = None):
         # Prepare rating metadata if provided
         rating_meta = {}
         if rating_metadata:
-            # Add overall metadata
+            # Handle the structure passed by rater (direct metadata, not nested)
+            metadata_source = rating_metadata  # Rater passes metadata directly, not nested
+            
             rating_meta.update({
-                'filename':rating_metadata.get('metadata' , {}).get('file_name'),
-                'total_score': rating_metadata.get('metadata', {}).get('total_score'),
-                'confidence': rating_metadata.get('metadata', {}).get('confidence'),
-                'rating_keywords': ', '.join(rating_metadata.get('metadata', {}).get('Keywords', [])),
-                'rating_comments': ' | '.join(rating_metadata.get('metadata', {}).get('comments', [])),
-                'rating_penalties': ' | '.join(rating_metadata.get('metadata', {}).get('penalties', [])),
+                'file_name': metadata_source.get('file_name'),
+                'total_score': metadata_source.get('total_score'),
+                'rating_keywords': ', '.join(metadata_source.get('Keywords', [])),
+                'rating_comments': ' | '.join(metadata_source.get('comments', [])),
+                'rating_penalties': ' | '.join(metadata_source.get('penalties', [])),
                 'is_rated': True,
                 'rating_source': 'CLARA-2',
-                'paper_type':rating_metadata.get('metadata' , {}).get('paper_type')
+                'paper_type': metadata_source.get('paper_type', 'Unknown')  # Default to 'Unknown' if None
             })
             
-            # Add individual scores
-            for score in rating_metadata.get('scores', []):
-                category = score.get('category', '').lower().replace(' ', '_')
-                rating_meta.update({
-                    f'score_{category}': score.get('score'),
-                    f'rationale_{category}': score.get('rationale', '')[:500]  # Limit rationale length
-                })
+            # Add individual scores - rater doesn't pass scores in rag_metadata
+            # Only basic metadata is passed for RAG processing
         else:
             rating_meta['is_rated'] = False
         
         for chunk in chunks:
             # Create document with only rating metadata
+            # Flatten metadata and ensure no None values for Pinecone compatibility
+            clean_metadata = flatten_metadata(rating_meta)
             doc = Document(
                 page_content=chunk['text'],
-                metadata=rating_meta.copy()  # Use a copy to avoid reference issues
+                metadata=clean_metadata
             )
-            logger.debug(f"Adding chunk to vector database with rating metadata: {rating_meta}")
-            vector_Db_doc.add_documents([doc])
+            logger.debug(f"Adding chunk to vector database with rating metadata: {clean_metadata}")
+            try:
+                vector_Db_doc.add_documents([doc])
+            except Exception as pinecone_error:
+                logger.error(f"Pinecone error: {pinecone_error}")
+                # Continue without RAG processing
+                return None
+        
+        # Return success status after processing all chunks
+        return True
     except Exception as e:
         print(f"Error: {str(e)}")
         import traceback
         traceback.print_exc()
- 
-
-
-
-
 
         
         

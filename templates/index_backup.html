@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MetaMed Research Paper Rater - Upload and evaluate research papers using the CLARA-2 scoring framework">
+    <title>MetaMed Research Paper Rater</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen">
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-20 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded z-50">Skip to main content</a>
+    
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white border-b border-white/20 z-50 shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-white/20 backdrop-blur-sm text-white p-3 rounded-xl shadow-lg border border-white/30">
+                        <i class="fas fa-file-medical text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-white">MetaMed Research Paper Rater</h1>
+                        <p class="text-blue-100 text-sm">Upload your research papers for evaluation using the CLARA-2 scoring framework</p>
+                    </div>
+                </div>
+                <div class="hidden md:flex items-center space-x-4">
+                    <span class="text-sm text-blue-100">Powered by AI</span>
+                    <div class="bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-medium border border-white/30">
+                        <i class="fas fa-circle text-green-400 text-xs mr-1"></i>
+                        Ready
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main-content" class="container mx-auto px-4 py-8 pt-24">
+        <section class="max-w-4xl mx-auto">
+            <!-- Upload Card -->
+            <article class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+                <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-6">
+                    <h2 class="text-2xl font-bold text-white flex items-center">
+                        <i class="fas fa-upload mr-3"></i>
+                        Upload Research Papers
+                    </h2>
+                    <p class="text-blue-100 mt-2">Supports PDF files and folders containing PDFs</p>
+                </div>
+                
+                <div class="p-8">
+                    <!-- Drop Area -->
+                    <div id="drop-area" class="relative group" role="button" tabindex="0" aria-label="Drop files here or click to browse">
+                        <div class="border-3 border-dashed border-gray-300 rounded-xl p-12 text-center cursor-pointer transition-all duration-300 hover:border-blue-500 hover:bg-blue-50/50 focus:outline-none focus:ring-4 focus:ring-blue-500/20">
+                            <div class="space-y-6">
+                                <div class="relative">
+                                    <div class="absolute inset-0 bg-blue-500/20 rounded-full blur-xl group-hover:bg-blue-500/30 transition-colors duration-300"></div>
+                                    <div class="relative bg-gradient-to-br from-blue-500 to-purple-600 text-white p-6 rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                                        <i class="fas fa-cloud-upload-alt text-5xl"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Drag & Drop your files here</h3>
+                                    <p class="text-gray-500 mb-4">or</p>
+                                    <label for="file-input" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 cursor-pointer transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
+                                        <i class="fas fa-folder-open mr-2"></i>
+                                        <span class="font-medium">Browse Files</span>
+                                        <input id="file-input" type="file" multiple webkitdirectory directory class="hidden" aria-label="Select files to upload">
+                                    </label>
+                                </div>
+                                <div class="flex items-center justify-center space-x-6 text-sm text-gray-400">
+                                    <span class="flex items-center"><i class="fas fa-file-pdf mr-1"></i> PDF</span>
+                                    <span class="flex items-center"><i class="fas fa-folder mr-1"></i> Folders</span>
+                                    <span class="flex items-center"><i class="fas fa-database mr-1"></i> Multiple files</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Selected Files -->
+                    <div class="mt-8">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                                <i class="fas fa-list mr-2 text-blue-600"></i>
+                                Selected Files
+                                <span id="file-count" class="ml-2 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">0</span>
+                            </h3>
+                            <button id="clear-all" class="text-sm text-red-600 hover:text-red-800 font-medium hidden" aria-label="Clear all files">
+                                <i class="fas fa-trash-alt mr-1"></i>
+                                Clear All
+                            </button>
+                        </div>
+                        <div id="file-list" class="space-y-2 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
+                            <!-- Files will be listed here -->
+                            <div class="text-center py-8 text-gray-400" id="empty-state">
+                                <i class="fas fa-inbox text-4xl mb-3"></i>
+                                <p>No files selected yet</p>
+                                <p class="text-sm mt-1">Drag files here or click browse to get started</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload Progress -->
+                    <div id="upload-progress" class="mt-8 hidden">
+                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center">
+                                    <div class="bg-blue-600 text-white p-2 rounded-lg mr-3">
+                                        <i class="fas fa-sync-alt animate-spin"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">Processing Files</h4>
+                                        <p id="upload-status" class="text-sm text-gray-600">Preparing to upload...</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span id="progress-percent" class="text-2xl font-bold text-blue-600">0%</span>
+                                    <p class="text-xs text-gray-500">Complete</p>
+                                </div>
+                            </div>
+                            <div class="relative">
+                                <div class="w-full bg-blue-100 rounded-full h-3 overflow-hidden">
+                                    <div id="progress-bar" class="bg-gradient-to-r from-blue-500 to-purple-600 h-3 rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
+                                </div>
+                                <div class="flex justify-between mt-2">
+                                    <span class="text-xs text-gray-500">Started</span>
+                                    <span id="current-file" class="text-xs text-gray-700 font-medium">--</span>
+                                    <span class="text-xs text-gray-500">Complete</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload Button -->
+                    <div class="mt-8 flex flex-col sm:flex-row gap-4">
+                        <button id="upload-button" class="flex-1 px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none font-semibold text-lg disabled:shadow-none" disabled>
+                            <i class="fas fa-rocket mr-2"></i>
+                            <span>Upload & Process Files</span>
+                        </button>
+                        <button id="reset-button" class="px-6 py-4 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-all duration-200 font-medium hidden">
+                            <i class="fas fa-redo mr-2"></i>
+                            <span>Start Over</span>
+                        </button>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <!-- Results Section -->
+        <section id="results-section" class="mt-12 max-w-6xl mx-auto hidden">
+            <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                <div class="bg-gradient-to-r from-green-600 to-emerald-600 p-6">
+                    <h2 class="text-2xl font-bold text-white flex items-center">
+                        <i class="fas fa-chart-line mr-3"></i>
+                        Processing Results
+                        <span id="results-count" class="ml-auto bg-white/20 px-3 py-1 rounded-full text-sm"></span>
+                    </h2>
+                    <p class="text-green-100 mt-2">Review the evaluation results for your uploaded research papers</p>
+                </div>
+                
+                <div class="p-6">
+                    <!-- Results Summary -->
+                    <div id="results-summary" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <!-- Summary cards will be inserted here -->
+                    </div>
+                    
+                    <!-- Results Container -->
+                    <div id="results-container" class="space-y-4">
+                        <!-- Results will be displayed here -->
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+                        <button id="download-results" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl">
+                            <i class="fas fa-download mr-2"></i>
+                            Download Results
+                        </button>
+                        <button id="new-upload" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-all duration-200">
+                            <i class="fas fa-plus mr-2"></i>
+                            Upload New Files
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-300 mt-16">
+        <div class="container mx-auto px-4 py-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center space-x-2 mb-4 md:mb-0">
+                    <i class="fas fa-file-medical text-blue-400"></i>
+                    <span class="font-semibold">MetaMed Research Paper Rater</span>
+                </div>
+                <div class="text-sm text-gray-400">
+                    Powered by CLARA-2 scoring framework
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/static/js/upload.js"></script>
+</body>
+</html>

@@ -124,8 +124,8 @@ async def health_check():
 async def rate_uploaded_paper(
     request: Request,
     files: List[UploadFile] = File(...),
-    skip_rag: bool = False,
-    skip_db: bool = False
+    skip_rag: bool = True,
+    skip_db: bool = True
 ):
     if not files:
         raise HTTPException(
