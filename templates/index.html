@@ -31,7 +31,7 @@
         }
     </script>
 </head>
-<body class="bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen">
+<body class="bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen flex flex-col">
     <!-- Background decoration -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
         <div class="absolute -top-40 -right-40 w-80 h-80 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse-slow"></div>
@@ -39,7 +39,7 @@
         <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-pink-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse-slow" style="animation-delay: 2s;"></div>
     </div>
 
-    <div class="relative z-10">
+    <div class="relative z-10 flex flex-col min-h-screen">
         <!-- Header -->
         <header class="bg-white/90 backdrop-blur-sm shadow-sm border-b border-gray-200/50 sticky top-0 z-50">
             <div class="container mx-auto px-4 py-4">
@@ -189,85 +189,10 @@
                 <!-- Results will be displayed here -->
             </div>
         </div>
-
-        <!-- Footer -->
-        <footer class="bg-gray-900 text-white mt-20">
-            <div class="container mx-auto px-4 py-12">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                    <!-- Company Info -->
-                    <div>
-                        <div class="flex items-center space-x-2 mb-4">
-                            <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-microscope text-white text-sm"></i>
-                            </div>
-                            <h3 class="text-lg font-bold">MetaMed</h3>
-                        </div>
-                        <p class="text-gray-400 text-sm mb-4">
-                            Advanced research paper evaluation using the CLARA-2 scoring framework for comprehensive medical research analysis.
-                        </p>
-                        <div class="flex space-x-3">
-                            <a href="#" class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors">
-                                <i class="fab fa-twitter text-sm"></i>
-                            </a>
-                            <a href="#" class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors">
-                                <i class="fab fa-linkedin text-sm"></i>
-                            </a>
-                            <a href="#" class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors">
-                                <i class="fab fa-github text-sm"></i>
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Product -->
-                    <div>
-                        <h4 class="text-lg font-semibold mb-4">Product</h4>
-                        <ul class="space-y-2">
-                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Features</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">CLARA-2 Framework</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">API Access</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Pricing</a></li>
-                        </ul>
-                    </div>
-
-                    <!-- Resources -->
-                    <div>
-                        <h4 class="text-lg font-semibold mb-4">Resources</h4>
-                        <ul class="space-y-2">
-                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Documentation</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Research Papers</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Case Studies</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Blog</a></li>
-                        </ul>
-                    </div>
-
-                    <!-- Support -->
-                    <div>
-                        <h4 class="text-lg font-semibold mb-4">Support</h4>
-                        <ul class="space-y-2">
-                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Help Center</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Contact Us</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Privacy Policy</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-sm">Terms of Service</a></li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Bottom Bar -->
-                <div class="border-t border-gray-800 mt-8 pt-8">
-                    <div class="flex flex-col md:flex-row justify-between items-center">
-                        <p class="text-gray-400 text-sm mb-4 md:mb-0">
-                            © 2024 MetaMed Research Paper Rater. All rights reserved.
-                        </p>
-                        <div class="flex items-center space-x-6 text-sm text-gray-400">
-                            <span>Built with ❤️ for medical research</span>
-                            <span>•</span>
-                            <span>Powered by CLARA-2</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </footer>
     </div>
+
+    <!-- Footer -->
+
 
     <script src="/static/js/upload.js"></script>
 </body>
