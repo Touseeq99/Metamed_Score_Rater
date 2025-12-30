@@ -1,6 +1,5 @@
 from typing import List, Dict, Any, Optional, Tuple
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain.docstore.document import Document as LangchainDocument
 from PyPDF2 import PdfReader
 import re
 import logging
