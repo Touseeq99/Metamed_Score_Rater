@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 class DocumentChunker:
     def __init__(
         self,
-        chunk_size: int = 1000,
-        chunk_overlap: int = 200,
+        chunk_size: int = 3500,
+        chunk_overlap: int = 700,
         separators: Optional[List[str]] = None,
         keep_separator: bool = True,
         length_function=len,

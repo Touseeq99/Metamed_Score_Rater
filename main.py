@@ -208,4 +208,3 @@ async def rate_uploaded_paper(
             detail=f"Error processing files: {str(e)}"
         )
 
-# Removed the rate_paper_by_path endpoint as it's not needed for API uploads

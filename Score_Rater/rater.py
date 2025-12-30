@@ -17,8 +17,13 @@ sys.path.append(str(Path(__file__).parent.parent))
 try:
     from Rag_Service.ingestion import ingestion_docs_doctor
     RAG_AVAILABLE = True
-except ImportError:
+    logger.info("✅ RAG Service imported successfully - RAG processing enabled")
+except ImportError as e:
+    logger.warning(f"❌ RAG Service import failed: {e}")
     logger.warning("RAG Service not found. Vector database ingestion will be skipped.")
+    RAG_AVAILABLE = False
+except Exception as e:
+    logger.error(f"❌ Unexpected error importing RAG Service: {e}")
     RAG_AVAILABLE = False
 
 # Import database models
@@ -428,8 +433,10 @@ def process_paper(file_path: str, skip_rag: bool = False, skip_db: bool = False)
             processed_output['paper_id'] = paper_id
     
     # Process with RAG if enabled
+    logger.info(f"🔍 Checking RAG availability - RAG_AVAILABLE: {RAG_AVAILABLE}")
     if RAG_AVAILABLE:
         try:
+            logger.info("🚀 Starting RAG processing...")
             # Ensure all metadata values are serializable and not None
             rag_metadata = {
                 'paper_id': paper_id,
@@ -441,6 +448,7 @@ def process_paper(file_path: str, skip_rag: bool = False, skip_db: bool = False)
             
             # Filter out any None values
             rag_metadata = {k: v for k, v in rag_metadata.items() if v is not None}
+            logger.info(f"📋 RAG metadata prepared: {rag_metadata}")
             
             rag_result = ingestion_docs_doctor(
                 file=file_path,
@@ -450,8 +458,14 @@ def process_paper(file_path: str, skip_rag: bool = False, skip_db: bool = False)
             processed_output['rag_processed'] = True
         except Exception as e:
             logger.error(f"❌ RAG processing failed: {e}")
+            import traceback
+            logger.error(f"📚 RAG Error traceback: {traceback.format_exc()}")
             processed_output['rag_processed'] = False
             processed_output['rag_error'] = str(e)
+    else:
+        logger.warning("⚠️ RAG processing skipped - RAG Service not available")
+        processed_output['rag_processed'] = False
+        processed_output['rag_error'] = 'RAG Service not available in production'
     
     # Delete the file from OpenAI
     delete_file_from_openai(uploaded_file)

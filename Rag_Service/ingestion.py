@@ -12,10 +12,37 @@ from langchain_core.documents import Document
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-chunker = DocumentChunker()
-index = init_doctor_db()
-embeddings = OpenAIEmbeddings()
-vector_Db_doc=PineconeVectorStore(index , embeddings)
+try:
+    logger.info("🔍 Initializing DocumentChunker...")
+    chunker = DocumentChunker()
+    logger.info("✅ DocumentChunker initialized successfully")
+except Exception as e:
+    logger.error(f"❌ Failed to initialize DocumentChunker: {e}")
+    raise
+
+try:
+    logger.info("🔍 Initializing doctor database...")
+    index = init_doctor_db()
+    logger.info("✅ Doctor database initialized successfully")
+except Exception as e:
+    logger.error(f"❌ Failed to initialize doctor database: {e}")
+    raise
+
+try:
+    logger.info("🔍 Initializing OpenAI embeddings...")
+    embeddings = OpenAIEmbeddings()
+    logger.info("✅ OpenAI embeddings initialized successfully")
+except Exception as e:
+    logger.error(f"❌ Failed to initialize OpenAI embeddings: {e}")
+    raise
+
+try:
+    logger.info("🔍 Initializing PineconeVectorStore...")
+    vector_Db_doc=PineconeVectorStore(index , embeddings)
+    logger.info("✅ PineconeVectorStore initialized successfully")
+except Exception as e:
+    logger.error(f"❌ Failed to initialize PineconeVectorStore: {e}")
+    raise
 
 
 
