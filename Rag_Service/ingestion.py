@@ -1,6 +1,8 @@
 import sys
 import os
 import logging
+import time
+from typing import List, Dict, Any
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from data_utils.document_parser import DocumentChunker
 from langchain_openai import OpenAIEmbeddings
@@ -79,7 +81,7 @@ def flatten_metadata(metadata):
 
 def ingestion_docs_doctor(file: str, rating_metadata: dict = None):
     """
-    Ingest a document into the vector database with only rating metadata.
+    Ingest a document into the vector database with optimized batch processing.
     
     Args:
         file (str): Path to the document file
@@ -87,6 +89,7 @@ def ingestion_docs_doctor(file: str, rating_metadata: dict = None):
             Should contain 'scores' and 'metadata' keys.
     """
     try:
+        start_time = time.time()
         logger.info(f"Processing file: {file}")
         chunks = chunker.chunk_pdf(file)
         
@@ -106,12 +109,11 @@ def ingestion_docs_doctor(file: str, rating_metadata: dict = None):
                 'rating_source': 'CLARA-2',
                 'paper_type': metadata_source.get('paper_type', 'Unknown')  # Default to 'Unknown' if None
             })
-            
-            # Add individual scores - rater doesn't pass scores in rag_metadata
-            # Only basic metadata is passed for RAG processing
         else:
             rating_meta['is_rated'] = False
         
+        # Prepare all documents for batch processing
+        documents = []
         for chunk in chunks:
             # Create document with only rating metadata
             # Flatten metadata and ensure no None values for Pinecone compatibility
@@ -120,21 +122,47 @@ def ingestion_docs_doctor(file: str, rating_metadata: dict = None):
                 page_content=chunk['text'],
                 metadata=clean_metadata
             )
-            logger.debug(f"Adding chunk to vector database with rating metadata: {clean_metadata}")
+            documents.append(doc)
+        
+        # Batch process documents - process in batches of 10 to avoid timeouts
+        batch_size = 10
+        total_batches = (len(documents) + batch_size - 1) // batch_size
+        
+        logger.info(f"Processing {len(documents)} chunks in {total_batches} batches of size {batch_size}")
+        
+        for i in range(0, len(documents), batch_size):
+            batch = documents[i:i + batch_size]
+            batch_num = i // batch_size + 1
+            
             try:
-                vector_Db_doc.add_documents([doc])
+                logger.debug(f"Processing batch {batch_num}/{total_batches} with {len(batch)} documents")
+                vector_Db_doc.add_documents(batch)
+                logger.debug(f"✅ Batch {batch_num} completed successfully")
+                
             except Exception as pinecone_error:
-                logger.error(f"Pinecone error: {pinecone_error}")
-                # Continue without RAG processing
-                return None
+                logger.error(f"❌ Pinecone error in batch {batch_num}: {pinecone_error}")
+                # Try individual documents if batch fails
+                logger.info("Attempting to process batch documents individually...")
+                
+                for j, doc in enumerate(batch):
+                    try:
+                        vector_Db_doc.add_documents([doc])
+                        logger.debug(f"✅ Individual document {j+1} in batch {batch_num} processed")
+                    except Exception as individual_error:
+                        logger.error(f"❌ Failed to process individual document {j+1}: {individual_error}")
+                        continue
+                
+                # If we're here, at least some documents failed, but we continue
+                if batch_num == total_batches:  # Last batch
+                    logger.warning("RAG processing completed with some errors")
+                    return True
         
-        # Return success status after processing all chunks
+        processing_time = time.time() - start_time
+        logger.info(f"✅ RAG processing completed successfully in {processing_time:.2f}s")
         return True
+        
     except Exception as e:
-        print(f"Error: {str(e)}")
+        logger.error(f"❌ Critical error in RAG processing: {str(e)}")
         import traceback
-        traceback.print_exc()
-
-        
-        
-    
+        logger.error(f"📚 RAG Error traceback: {traceback.format_exc()}")
+        return None

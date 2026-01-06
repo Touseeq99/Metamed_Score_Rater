@@ -12,6 +12,8 @@ from pathlib import Path
 import tempfile
 import shutil
 import json
+import asyncio
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Import the rater module
 from Score_Rater.rater import process_paper, clara_prompt
@@ -106,6 +108,55 @@ def process_uploaded_item(item_path: Path, skip_rag: bool, skip_db: bool) -> Dic
     
     return results
 
+def process_single_file(file_data: tuple) -> Dict[str, Any]:
+    """Process a single uploaded file - designed for concurrent execution."""
+    file, temp_dir, skip_rag, skip_db = file_data
+    
+    try:
+        # Handle potential folder structure in filename
+        file_path = Path(file.filename)
+        
+        # Create necessary subdirectories in temp folder
+        target_dir = temp_dir
+        if len(file_path.parts) > 1:
+            # Create all parent directories
+            target_dir = temp_dir / file_path.parent
+            target_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Save the uploaded file to a temporary location with proper path handling
+        target_file = target_dir / file_path.name
+        with target_file.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # Process the file or directory
+        process_results = process_uploaded_item(target_file, skip_rag, skip_db)
+        
+        # Clean up the temporary file
+        if target_file.exists():
+            if target_file.is_file():
+                target_file.unlink()
+            else:
+                shutil.rmtree(target_file)
+                
+        # Clean up empty directories
+        if len(file_path.parts) > 1:
+            try:
+                target_dir.rmdir()  # Remove if empty
+            except OSError:
+                pass  # Directory not empty, leave it
+        
+        return {
+            "filename": file.filename,
+            "results": process_results
+        }
+                
+    except Exception as e:
+        logger.error(f"Error processing {file.filename}: {str(e)}", exc_info=True)
+        return {
+            "filename": file.filename,
+            "error": str(e)
+        }
+
 # Web Interface
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
@@ -142,48 +193,45 @@ async def rate_uploaded_paper(
     }
     
     try:
-        for file in files:
-            try:
-                # Handle potential folder structure in filename
-                file_path = Path(file.filename)
-                
-                # Create necessary subdirectories in temp folder
-                target_dir = temp_dir
-                if len(file_path.parts) > 1:
-                    # Create all parent directories
-                    target_dir = temp_dir / file_path.parent
-                    target_dir.mkdir(parents=True, exist_ok=True)
-                
-                # Save the uploaded file to a temporary location with proper path handling
-                target_file = target_dir / file_path.name
-                with target_file.open("wb") as buffer:
-                    shutil.copyfileobj(file.file, buffer)
-                
-                # Process the file or directory
-                process_results = process_uploaded_item(target_file, skip_rag, skip_db)
-                results["successful"].extend(process_results["successful"])
-                results["failed"].extend(process_results["failed"])
-                
-                # Clean up the temporary file
-                if target_file.exists():
-                    if target_file.is_file():
-                        target_file.unlink()
+        # Determine optimal number of concurrent workers
+        # Limit to avoid overwhelming OpenAI API and system resources
+        max_workers = min(len(files), 5)  # Process max 5 files concurrently
+        
+        logger.info(f"Processing {len(files)} files with {max_workers} concurrent workers")
+        
+        # Prepare file data for concurrent processing
+        file_data_list = [(file, temp_dir, skip_rag, skip_db) for file in files]
+        
+        # Process files concurrently using ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all tasks
+            future_to_file = {
+                executor.submit(process_single_file, file_data): file_data[0] 
+                for file_data in file_data_list
+            }
+            
+            # Collect results as they complete
+            for future in as_completed(future_to_file):
+                original_file = future_to_file[future]
+                try:
+                    result = future.result()
+                    
+                    if "error" in result:
+                        results["failed"].append({
+                            "file": result["filename"],
+                            "error": result["error"]
+                        })
                     else:
-                        shutil.rmtree(target_file)
+                        file_results = result["results"]
+                        results["successful"].extend(file_results["successful"])
+                        results["failed"].extend(file_results["failed"])
                         
-                # Clean up empty directories
-                if len(file_path.parts) > 1:
-                    try:
-                        target_dir.rmdir()  # Remove if empty
-                    except OSError:
-                        pass  # Directory not empty, leave it
-                        
-            except Exception as e:
-                logger.error(f"Error processing {file.filename}: {str(e)}", exc_info=True)
-                results["failed"].append({
-                    "file": file.filename,
-                    "error": str(e)
-                })
+                except Exception as e:
+                    logger.error(f"Unexpected error processing {original_file.filename}: {str(e)}", exc_info=True)
+                    results["failed"].append({
+                        "file": original_file.filename,
+                        "error": str(e)
+                    })
         
         # Prepare response
         response_data = RatingResponse(

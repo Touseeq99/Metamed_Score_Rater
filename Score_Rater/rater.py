@@ -2,9 +2,21 @@ import os
 import sys
 import logging
 import json
+import time
+import asyncio
 from pathlib import Path
 from openai import OpenAI
 from dotenv import load_dotenv
+from typing import Optional
+
+# Import cache utility
+try:
+    from utils.file_cache import get_cache
+    CACHE_AVAILABLE = True
+    logger.info("✅ File cache imported successfully")
+except ImportError as e:
+    logger.warning(f"❌ File cache import failed: {e}")
+    CACHE_AVAILABLE = False
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -38,7 +50,33 @@ except ImportError as e:
 # ---------------------------------------------------------------------
 # STEP 1: CREATE THE CLARA AI SYSTEM PROMPT
 # ---------------------------------------------------------------------
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# Initialize OpenAI client with optimized settings
+def get_openai_client():
+    """Get optimized OpenAI client with connection pooling."""
+    load_dotenv()
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        logger.error("OPENAI_API_KEY not found in environment variables")
+        raise ValueError("OPENAI_API_KEY environment variable is required")
+    
+    return OpenAI(
+        api_key=api_key,
+        max_retries=3,  # Enable automatic retries
+        timeout=60.0,   # 60 second timeout
+    )
+
+# Global client instance for connection reuse
+_client = None
+
+def get_client():
+    """Get or create global OpenAI client instance."""
+    global _client
+    if _client is None:
+        _client = get_openai_client()
+    return _client
+
+client = get_client()
 clara_prompt = """
 You are CLARA-2, an expert Context-Aware Clinical Evidence Appraiser.
 You evaluate biomedical studies using the structured scoring framework described in the attached specification document (clara2.docx).
@@ -187,80 +225,102 @@ Maintain confidence calibration per framework.
 # ---------------------------------------------------------------------
 
 def upload_file_to_openai(file_path):
-    load_dotenv()
-    if not os.getenv("OPENAI_API_KEY"):
-        logger.error("OPENAI_API_KEY not found in environment variables")
-        raise ValueError("OPENAI_API_KEY environment variable is required")
-    
+    """Upload file to OpenAI with retry logic and optimized settings."""
+    client = get_client()
     
     original_filename = os.path.basename(file_path)
     logger.info(f"📄 Uploading file: {file_path}")
     
-    try:
-        with open(file_path, "rb") as file_obj:
-            uploaded_file = client.files.create(file=file_obj, purpose="assistants")
-        logger.info(f"✅ Uploaded successfully | File ID: {uploaded_file.id} | Filename: {original_filename}")
-        return uploaded_file
-    except Exception as e:
-        logger.error(f"❌ File upload failed: {e}")
-        sys.exit(1)
+    max_retries = 3
+    retry_delay = 1.0  # Start with 1 second delay
+    
+    for attempt in range(max_retries):
+        try:
+            with open(file_path, "rb") as file_obj:
+                uploaded_file = client.files.create(file=file_obj, purpose="assistants")
+            logger.info(f"✅ Uploaded successfully | File ID: {uploaded_file.id} | Filename: {original_filename}")
+            return uploaded_file
+        except Exception as e:
+            if attempt < max_retries - 1:
+                logger.warning(f"⚠️ Upload attempt {attempt + 1} failed: {e}. Retrying in {retry_delay}s...")
+                time.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+            else:
+                logger.error(f"❌ File upload failed after {max_retries} attempts: {e}")
+                raise
 
 # ---------------------------------------------------------------------
 # STEP 3: RUN THE CLARA-2 EVALUATION
 # ---------------------------------------------------------------------
 
 def run_clara_evaluation(uploaded_file):
-    load_dotenv()
-    if not os.getenv("OPENAI_API_KEY"):
-        logger.error("OPENAI_API_KEY not found in environment variables")
-        raise ValueError("OPENAI_API_KEY environment variable is required")
+    """Run CLARA evaluation with retry logic and optimized settings."""
+    client = get_client()
     
     logger.info("🧠 Running CLARA AI evaluation via Responses API...")
     
-    try:
-        response = client.responses.create(
-            model="gpt-4.1-mini",  # or "gpt-4o" for higher accuracy
-            input=[
-            {
-                "role": "system",
-                "content": clara_prompt
-            },
-            {
-                "role": "user",
-                "content": [
-                    {"type": "input_text", "text": "Evaluate the quality of the uploaded research paper and return the JSON output."},
-                    {"type": "input_file", "file_id": uploaded_file.id}
-                ]
-            }
-        ]
-    )
-
+    max_retries = 3
+    retry_delay = 1.0
+    
+    for attempt in range(max_retries):
+        try:
+            response = client.responses.create(
+                model="gpt-4.1-mini",  # or "gpt-4o" for higher accuracy
+                input=[
+                {
+                    "role": "system",
+                    "content": clara_prompt
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "input_text", "text": "Evaluate the quality of the uploaded research paper and return the JSON output."},
+                        {"type": "input_file", "file_id": uploaded_file.id}
+                    ]
+                }
+            ]
+        )
+                
+            result_text = response.output[0].content[0].text
+            logger.info("\n✅ Evaluation Completed Successfully.")
+            logger.info("🧾 Output JSON:\n%s", result_text)
+            return result_text
             
-        result_text = response.output[0].content[0].text
-        logger.info("\n✅ Evaluation Completed Successfully.")
-        logger.info("🧾 Output JSON:\n%s", result_text)
-        return result_text
-    except Exception as e:
-        logger.error(f"❌ Error during evaluation: {e}")
-        return None
+        except Exception as e:
+            if attempt < max_retries - 1:
+                logger.warning(f"⚠️ Evaluation attempt {attempt + 1} failed: {e}. Retrying in {retry_delay}s...")
+                time.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+            else:
+                logger.error(f"❌ Error during evaluation after {max_retries} attempts: {e}")
+                return None
 
 # ---------------------------------------------------------------------
 # STEP 4: DELETE THE FILE FROM OPENAI AFTER PROCESSING
 # ---------------------------------------------------------------------
 
 def delete_file_from_openai(uploaded_file):
-    load_dotenv()
-    if not os.getenv("OPENAI_API_KEY"):
-        logger.error("OPENAI_API_KEY not found in environment variables")
-        raise ValueError("OPENAI_API_KEY environment variable is required")
+    """Delete file from OpenAI with retry logic."""
+    client = get_client()
     
     logger.info("\n🧹 Cleaning up temporary uploaded file from OpenAI...")
     
-    try:
-        client.files.delete(uploaded_file.id)
-        logger.info(f"🗑️ File {uploaded_file.id} deleted successfully from OpenAI.")
-    except Exception as e:
-        logger.error(f"⚠️ Failed to delete file from OpenAI: {e}")
+    max_retries = 2
+    retry_delay = 0.5
+    
+    for attempt in range(max_retries):
+        try:
+            client.files.delete(uploaded_file.id)
+            logger.info(f"🗑️ File {uploaded_file.id} deleted successfully from OpenAI.")
+            return
+        except Exception as e:
+            if attempt < max_retries - 1:
+                logger.warning(f"⚠️ Delete attempt {attempt + 1} failed: {e}. Retrying in {retry_delay}s...")
+                time.sleep(retry_delay)
+                retry_delay *= 2
+            else:
+                logger.error(f"⚠️ Failed to delete file from OpenAI after {max_retries} attempts: {e}")
+                # Don't raise - cleanup failure shouldn't break the main flow
 
 def process_rater_output(result_text):
     """
@@ -319,12 +379,13 @@ def process_rater_output(result_text):
         logger.error(f"Error processing rater output: {str(e)}")
         return None
 
-def save_to_database(processed_output , file_path):
+def save_to_database(processed_output, file_path):
     """
-    Save the processed output to the database using SQLAlchemy models.
+    Save the processed output to the database using optimized bulk operations.
     
     Args:
         processed_output (dict): The processed output from process_rater_output()
+        file_path (str): Path to the processed file
     
     Returns:
         int: The ID of the created ResearchPaper record, or None if failed
@@ -346,62 +407,77 @@ def save_to_database(processed_output , file_path):
         db.add(research_paper)
         db.flush()  # Flush to get the ID for relationships
         
-        # Add scores
+        # Prepare bulk insert operations
+        scores_to_insert = []
+        keywords_to_insert = []
+        comments_to_insert = []
+        
+        # Collect scores for bulk insert
         for score_data in processed_output['scores']:
-            score = ResearchPaperScore(
+            scores_to_insert.append(ResearchPaperScore(
                 research_paper_id=research_paper.id,
                 category=score_data['category'],
                 score=score_data['score'],
                 rationale=score_data['rationale'],
                 max_score=10  # Default max score, adjust if needed
-            )
-            db.add(score)
+            ))
         
-        # Add keywords
+        # Collect keywords for bulk insert
         for keyword in metadata.get('Keywords', []):
-            kw = ResearchPaperKeyword(
+            keywords_to_insert.append(ResearchPaperKeyword(
                 research_paper_id=research_paper.id,
                 keyword=keyword[:255]  # Ensure it fits in the String field
-            )
-            db.add(kw)
+            ))
         
-        # Add comments and penalties
+        # Collect comments for bulk insert
         for comment in metadata.get('comments', []):
             is_penalty = any(penalty_word in comment.lower() 
                            for penalty_word in ['penalty', 'penalized', 'violation'])
             
-            comment_obj = ResearchPaperComment(
+            comments_to_insert.append(ResearchPaperComment(
                 research_paper_id=research_paper.id,
                 comment=comment,
                 is_penalty=is_penalty
-            )
-            db.add(comment_obj)
+            ))
         
         # Add penalties from the penalties list
         for penalty in metadata.get('penalties', []):
-            penalty_obj = ResearchPaperComment(
+            comments_to_insert.append(ResearchPaperComment(
                 research_paper_id=research_paper.id,
                 comment=penalty,
                 is_penalty=True
-            )
-            db.add(penalty_obj)
+            ))
         
+        # Perform bulk inserts
+        if scores_to_insert:
+            db.bulk_save_objects(scores_to_insert, return_defaults=True)
+            logger.info(f"✅ Bulk inserted {len(scores_to_insert)} scores")
+        
+        if keywords_to_insert:
+            db.bulk_save_objects(keywords_to_insert, return_defaults=True)
+            logger.info(f"✅ Bulk inserted {len(keywords_to_insert)} keywords")
+        
+        if comments_to_insert:
+            db.bulk_save_objects(comments_to_insert, return_defaults=True)
+            logger.info(f"✅ Bulk inserted {len(comments_to_insert)} comments")
+        
+        # Single commit for all operations
         db.commit()
-        logger.info(f" Successfully saved to database with ID: {research_paper.id}")
+        logger.info(f"✅ Successfully saved to database with ID: {research_paper.id}")
         return research_paper.id
         
     except Exception as e:
         db.rollback()
-        logger.error(f" Error saving to database: {str(e)}")
+        logger.error(f"❌ Error saving to database: {str(e)}")
         import traceback
-        traceback.print_exc()
+        logger.error(f"📚 Database Error traceback: {traceback.format_exc()}")
         return None
     finally:
         db.close()
 
 def process_paper(file_path: str, skip_rag: bool = False, skip_db: bool = False) -> dict:
     """
-    Process a research paper using the CLARA-2 scoring framework.
+    Process a research paper using the CLARA-2 scoring framework with caching.
     
     Args:
         file_path: Path to the research paper PDF file
@@ -416,6 +492,59 @@ def process_paper(file_path: str, skip_rag: bool = False, skip_db: bool = False)
         logger.error(f"File not found: {file_path}")
         raise FileNotFoundError(f"File not found: {file_path}")
 
+    # Check cache first
+    if CACHE_AVAILABLE:
+        try:
+            cache = get_cache()
+            cached_result = cache.get(file_path)
+            
+            if cached_result:
+                logger.info(f"🚀 Using cached result for {Path(file_path).name}")
+                
+                # Still perform RAG and DB operations if needed and not skipped
+                if not skip_rag and RAG_AVAILABLE:
+                    try:
+                        logger.info("🚀 Starting RAG processing for cached result...")
+                        rag_metadata = {
+                            'paper_id': cached_result.get('paper_id'),
+                            'paper_type': cached_result.get('metadata', {}).get('paper_type', 'Unknown'),
+                            'file_name': os.path.basename(file_path),
+                            'total_score': cached_result.get('metadata', {}).get('total_score', 0),
+                            'confidence': cached_result.get('metadata', {}).get('confidence', 0)
+                        }
+                        
+                        rag_metadata = {k: v for k, v in rag_metadata.items() if v is not None}
+                        logger.info(f"📋 RAG metadata prepared: {rag_metadata}")
+                        
+                        rag_result = ingestion_docs_doctor(
+                            file=file_path,
+                            rating_metadata=rag_metadata
+                        )
+                        logger.info(f"✅ RAG processing completed: {rag_result}")
+                        cached_result['rag_processed'] = True
+                    except Exception as e:
+                        logger.error(f"❌ RAG processing failed: {e}")
+                        cached_result['rag_processed'] = False
+                        cached_result['rag_error'] = str(e)
+                
+                if not skip_db and DB_AVAILABLE and not cached_result.get('paper_id'):
+                    try:
+                        paper_id = save_to_database(cached_result, file_path)
+                        if paper_id:
+                            logger.info(f"✅ Saved cached result to database with ID: {paper_id}")
+                            cached_result['paper_id'] = paper_id
+                    except Exception as e:
+                        logger.error(f"❌ Database save failed for cached result: {e}")
+                
+                return cached_result
+                
+        except Exception as e:
+            logger.warning(f"⚠️ Cache check failed: {e}. Proceeding with normal processing.")
+
+    # Normal processing flow (no cache or cache miss)
+    start_time = time.time()
+    logger.info(f"🔄 Processing {Path(file_path).name} from scratch")
+    
     # Upload the file to OpenAI
     uploaded_file = upload_file_to_openai(file_path)
     
@@ -425,11 +554,14 @@ def process_paper(file_path: str, skip_rag: bool = False, skip_db: bool = False)
     # Process the result
     processed_output = process_rater_output(result_text)
     
+    if not processed_output:
+        raise ValueError("Failed to process rater output")
+    
     # Save to database if enabled
     if DB_AVAILABLE and not skip_db:
-        paper_id = save_to_database(processed_output , file_path)
+        paper_id = save_to_database(processed_output, file_path)
         if paper_id:
-            logger.info(f" Successfully saved to database with ID: {paper_id}")
+            logger.info(f"✅ Successfully saved to database with ID: {paper_id}")
             processed_output['paper_id'] = paper_id
     
     # Process with RAG if enabled
@@ -439,7 +571,7 @@ def process_paper(file_path: str, skip_rag: bool = False, skip_db: bool = False)
             logger.info("🚀 Starting RAG processing...")
             # Ensure all metadata values are serializable and not None
             rag_metadata = {
-                'paper_id': paper_id,
+                'paper_id': processed_output.get('paper_id'),
                 'paper_type': processed_output.get('metadata', {}).get('paper_type', 'Unknown'),
                 'file_name': os.path.basename(file_path),
                 'total_score': processed_output.get('metadata', {}).get('total_score', 0),
@@ -469,6 +601,17 @@ def process_paper(file_path: str, skip_rag: bool = False, skip_db: bool = False)
     
     # Delete the file from OpenAI
     delete_file_from_openai(uploaded_file)
+    
+    # Cache the result
+    if CACHE_AVAILABLE:
+        try:
+            cache = get_cache()
+            cache.set(file_path, processed_output)
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to cache result: {e}")
+    
+    processing_time = time.time() - start_time
+    logger.info(f"✅ Processing completed for {Path(file_path).name} in {processing_time:.2f}s")
     
     return processed_output
 
