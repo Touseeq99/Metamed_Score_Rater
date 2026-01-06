@@ -9,6 +9,13 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from typing import Optional
 
+# Configure logging first
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+# Add project root to Python path
+sys.path.append(str(Path(__file__).parent.parent))
+
 # Import cache utility
 try:
     from utils.file_cache import get_cache
@@ -17,13 +24,6 @@ try:
 except ImportError as e:
     logger.warning(f"❌ File cache import failed: {e}")
     CACHE_AVAILABLE = False
-
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
-# Add project root to Python path
-sys.path.append(str(Path(__file__).parent.parent))
 
 # Import RAG ingestion function
 try:
